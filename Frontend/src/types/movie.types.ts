@@ -1,0 +1,41 @@
+// ─── Movie Types ────────────────────────────────────────────────────────────
+
+export interface Genre {
+  id: number;
+  name: string;
+}
+
+export interface CastMember {
+  id: number;
+  name: string;
+  character: string;
+  profile_url: string | null;
+}
+
+export interface Movie {
+  tmdb_id: number;
+  title: string;
+  overview: string;
+  release_date: string;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  vote_average: number;
+  genre_ids?: number[];
+  is_upcoming?: boolean;
+  is_favorited?: boolean;
+}
+
+export interface MovieDetail extends Movie {
+  runtime: number | null;
+  genres: Genre[];
+  cast: CastMember[];
+  trailer_url: string | null;
+  tagline: string | null;
+  status: string;
+}
+
+export interface MovieListResponse {
+  results: Movie[];
+  total_pages: number;
+  total_results: number;
+}
