@@ -1,0 +1,14 @@
+# Solid Queue recurring jobs — runs TMDB sync daily at 6am
+# https://github.com/rails/solid_queue#recurring-tasks
+
+production:
+  tmdb_daily_sync:
+    class: TmdbSyncJob
+    schedule: "0 6 * * *"
+    description: "Sync upcoming and now-playing movies from TMDB"
+
+development:
+  tmdb_daily_sync:
+    class: TmdbSyncJob
+    schedule: "0 6 * * *"
+    description: "Sync upcoming and now-playing movies from TMDB"
