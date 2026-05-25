@@ -1,4 +1,4 @@
-<h1 align="center">Synapse — Cinema & Recompensas</h1>
+<h1 align="center">Synapse</h1>
 
 O **Synapse** é um sistema completo e moderno de fidelidade e ingressos para redes de cinema. Ele permite que os usuários façam login com suas contas do Google, explorem filmes em cartaz e próximas estreias sincronizados diretamente com a API do **The Movie Database (TMDB)**, comprem ingressos simulados com descontos exclusivos e realizem o check-in presencial nas sessões do cinema por meio de **QR Codes**.
 
