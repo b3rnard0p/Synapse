@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Movie, MovieDetail, MovieListResponse, Genre } from '@/types/movie.types';
+import { Movie, MovieDetail, MovieListResponse, Genre, PersonDetail } from '@/types/movie.types';
 
 export const moviesService = {
   /**
@@ -7,6 +7,16 @@ export const moviesService = {
    */
   getUpcoming: async (page = 1): Promise<MovieListResponse> => {
     const response = await apiClient.get<MovieListResponse>('/movies/upcoming', {
+      params: { page },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get recommended movies based on user genres
+   */
+  getRecommended: async (page = 1): Promise<MovieListResponse> => {
+    const response = await apiClient.get<MovieListResponse>('/movies/recommended', {
       params: { page },
     });
     return response.data;
@@ -37,6 +47,14 @@ export const moviesService = {
    */
   getById: async (tmdbId: number): Promise<MovieDetail> => {
     const response = await apiClient.get<MovieDetail>(`/movies/${tmdbId}`);
+    return response.data;
+  },
+
+  /**
+   * Get person (actor/crew) details by TMDB ID
+   */
+  getPersonById: async (personId: number): Promise<PersonDetail> => {
+    const response = await apiClient.get<PersonDetail>(`/people/${personId}`);
     return response.data;
   },
 

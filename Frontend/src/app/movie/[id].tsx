@@ -15,19 +15,21 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, ArrowLeft, Heart, Star, Clock, Calendar, Play, Ticket, PartyPopper, MapPin, Banknote } from 'lucide-react-native';
+import { Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { User, ArrowLeft, Heart, Star, Clock, Calendar, Play, Ticket, PartyPopper, MapPin, Banknote, Film, Bell } from 'lucide-react-native';
 import { useMoviesStore } from '@/stores/movies.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTicketsStore } from '@/stores/tickets.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { Colors } from '@/constants/theme';
-import { CastMember } from '@/types/movie.types';
+import { CastMember, Movie } from '@/types/movie.types';
 
 const { width, height } = Dimensions.get('window');
 
-function CastCard({ member }: { member: CastMember }) {
+function CastCard({ member, onPress }: { member: CastMember; onPress: () => void }) {
   return (
-    <View style={styles.castCard}>
+    <TouchableOpacity style={styles.castCard} onPress={onPress} activeOpacity={0.85}>
       {member.profile_url ? (
         <Image source={{ uri: member.profile_url }} style={styles.castPhoto} />
       ) : (
@@ -37,7 +39,22 @@ function CastCard({ member }: { member: CastMember }) {
       )}
       <Text style={[styles.castName, { color: Colors.dark.text }]} numberOfLines={2}>{member.name}</Text>
       <Text style={[styles.castChar, { color: Colors.dark.textSecondary }]} numberOfLines={1}>{member.character}</Text>
-    </View>
+    </TouchableOpacity>
+  );
+}
+
+function SimilarMovieCard({ movie, onPress }: { movie: Movie; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.similarCard} onPress={onPress} activeOpacity={0.85}>
+      {movie.poster_url ? (
+        <Image source={{ uri: movie.poster_url }} style={styles.similarImage} />
+      ) : (
+        <View style={[styles.similarImage, styles.similarPlaceholder]}>
+          <Film size={24} color="rgba(255,255,255,0.2)" />
+        </View>
+      )}
+      <Text style={styles.similarTitle} numberOfLines={2}>{movie.title}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -72,12 +89,55 @@ export default function MovieDetailScreen() {
         original_price: 35.0,
       });
       setPurchaseSuccess(true);
+      
+      // Schedule Session Reminder Notification
+      if (Platform.OS === 'web') {
+        setTimeout(() => {
+          window.alert('🍿 É hoje! Sua sessão de ' + currentMovie.title + ' no Cinemark começa em breve. Acesse sua Carteira para ver o QR Code.');
+        }, 10000);
+      } else {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: '🍿 É hoje!',
+            body: `Sua sessão de ${currentMovie.title} no Cinemark começa em breve. Acesse sua Carteira para ver o QR Code.`,
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: 10,
+          },
+        });
+      }
     } catch {
       Alert.alert('Erro', 'Não foi possível processar a compra. Tente novamente.');
     } finally {
       setBuying(false);
     }
   };
+
+  const handleRemindMe = async () => {
+    if (!currentMovie) return;
+    
+    if (Platform.OS === 'web') {
+      window.alert('Lembrete ativado! Você será avisado quando ' + currentMovie.title + ' lançar.');
+      setTimeout(() => {
+        window.alert('🎟️ Lançamento Chegando! ' + currentMovie.title + ' estreia em breve! Garanta seu ingresso com desconto agora no Synapse.');
+      }, 10000);
+    } else {
+      Alert.alert('Lembrete ativado!', `Você será avisado quando ${currentMovie.title} lançar.`);
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🎟️ Lançamento Chegando!',
+          body: `${currentMovie.title} estreia em breve! Garanta seu ingresso com desconto agora no Synapse.`,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 10,
+        },
+      });
+    }
+  };
+
+  const isUpcoming = currentMovie && new Date(currentMovie.release_date) > new Date();
 
   if (isLoading || !currentMovie) {
     return (
@@ -161,29 +221,69 @@ export default function MovieDetailScreen() {
             <Text style={[styles.overview, { color: c.textSecondary }]}>{currentMovie.overview || 'Sem sinopse disponível.'}</Text>
           </View>
 
+          {/* Watch Providers */}
+          {currentMovie.watch_providers && currentMovie.watch_providers.length > 0 && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Onde Assistir</Text>
+              <View style={styles.providersRow}>
+                {currentMovie.watch_providers.map((p) => (
+                  <View key={p.provider_id} style={styles.providerBadge}>
+                    <Image source={{ uri: p.logo_url || '' }} style={styles.providerLogo} />
+                    <Text style={[styles.providerName, { color: c.textSecondary }]} numberOfLines={1}>{p.provider_name}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
           {/* Cast */}
           {currentMovie.cast && currentMovie.cast.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: c.text }]}>Elenco</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.castList}>
                 {currentMovie.cast.map((member) => (
-                  <CastCard key={member.id} member={member} />
+                  <CastCard key={member.id} member={member} onPress={() => router.push(`/person/${member.id}`)} />
                 ))}
               </ScrollView>
             </View>
           )}
 
-          {/* Trailer */}
-          {currentMovie.trailer_url && (
-            <TouchableOpacity
-              style={styles.trailerButton}
-              onPress={() => Linking.openURL(currentMovie.trailer_url!)}
-            >
-              <LinearGradient colors={['rgba(255,0,0,0.2)', 'rgba(255,0,0,0.1)']} style={styles.trailerGradient}>
-                <Play size={20} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.trailerText}>Assistir Trailer Oficial</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+          {/* Trailer and Remind Me */}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {currentMovie.trailer_url && (
+              <TouchableOpacity
+                style={[styles.trailerButton, { flex: 1 }]}
+                onPress={() => Linking.openURL(currentMovie.trailer_url!)}
+              >
+                <LinearGradient colors={['rgba(255,0,0,0.2)', 'rgba(255,0,0,0.1)']} style={styles.trailerGradient}>
+                  <Play size={20} color="#FFFFFF" fill="#FFFFFF" />
+                  <Text style={styles.trailerText}>Assistir Trailer Oficial</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+
+            {isUpcoming && (
+              <TouchableOpacity
+                style={[styles.trailerButton, { width: 60 }]}
+                onPress={handleRemindMe}
+              >
+                <LinearGradient colors={[c.primary + '33', c.primary + '11']} style={styles.trailerGradient}>
+                  <Bell size={24} color={c.primary} />
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Similar Movies */}
+          {currentMovie.similar && currentMovie.similar.length > 0 && (
+            <View style={[styles.section, { marginTop: 32 }]}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Títulos Semelhantes</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.castList}>
+                {currentMovie.similar.map((movie) => (
+                  <SimilarMovieCard key={movie.tmdb_id} movie={movie} onPress={() => router.push(`/movie/${movie.tmdb_id}`)} />
+                ))}
+              </ScrollView>
+            </View>
           )}
         </View>
       </ScrollView>
@@ -318,6 +418,14 @@ const styles = StyleSheet.create({
   castPlaceholder: { backgroundColor: '#27272a', justifyContent: 'center', alignItems: 'center' },
   castName: { fontSize: 11, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
   castChar: { fontSize: 10, color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
+  similarCard: { width: 110, gap: 8 },
+  similarImage: { width: 110, height: 160, borderRadius: 12 },
+  similarPlaceholder: { backgroundColor: '#27272a', justifyContent: 'center', alignItems: 'center' },
+  similarTitle: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
+  providersRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
+  providerBadge: { alignItems: 'center', gap: 4, width: 64 },
+  providerLogo: { width: 44, height: 44, borderRadius: 12 },
+  providerName: { fontSize: 10, textAlign: 'center' },
   trailerButton: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,0,0,0.3)' },
   trailerGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 10 },
   trailerIcon: { fontSize: 20 },

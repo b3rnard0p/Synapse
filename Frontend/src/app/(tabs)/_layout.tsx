@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Home, Compass, Ticket, User } from 'lucide-react-native';
+import { Popcorn, Compass, Ticket, User, Heart } from 'lucide-react-native';
 import { useThemeStore } from '@/stores/theme.store';
 import { Colors } from '@/constants/theme';
 
@@ -56,7 +56,7 @@ export default function TabsLayout() {
         options={{
           title: 'Início',
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon Icon={Home} focused={focused} />
+            <TabBarIcon Icon={Popcorn} focused={focused} />
           ),
         }}
       />
@@ -79,9 +79,19 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="favorites"
+        options={{
+          title: 'Favoritos',
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon Icon={Heart} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Perfil',
+          href: null,
           tabBarIcon: ({ focused }) => (
             <TabBarIcon Icon={User} focused={focused} />
           ),

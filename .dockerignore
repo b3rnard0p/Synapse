@@ -1,0 +1,22 @@
+# Ignorar diretórios pesados do Node e de builds
+node_modules/
+Frontend/node_modules/
+Frontend/.expo/
+Frontend/web-build/
+Frontend/dist/
+
+# Ignorar banco de dados local e logs do Rails
+Backend/storage/
+Backend/log/
+Backend/tmp/
+Backend/public/assets/
+Backend/.bundle/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml

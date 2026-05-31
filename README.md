@@ -125,7 +125,7 @@ A camada de serviços isola regras de negócios externas e integrações com ter
 
 * **[GoogleAuthService (google_auth_service.rb)](file:///home/b3rnard0p/ProjetosWSL/Synapse/Backend/app/services/google_auth_service.rb):** Realiza chamadas HTTP com `httparty` para o endpoint seguro do Google OAuth2 (`tokeninfo`) para checar a validade do Token ID, garantindo que o cabeçalho de audiência (`aud`) coincida com os IDs de clientes registrados do backend (Web) ou aplicativos móveis (iOS/Android).
 * **[JwtService (jwt_service.rb)](file:///home/b3rnard0p/ProjetosWSL/Synapse/Backend/app/services/jwt_service.rb):** Controla a expiração (configurada para **30 dias**) e a criptografia dos tokens de sessão baseados no padrão **HMAC-SHA256 (HS256)**, utilizando a chave `secret_key_base` padrão do Rails.
-* **[TmdbService (tmdb_service.rb)](file:///home/b3rnard0p/ProjetosWSL/Synapse/Backend/app/services/tmdb_service.rb):** Implementa um wrapper completo de API externa com o TMDB. Consome coleções, dados detalhados da equipe técnica/elenco, trailers do YouTube e monta caminhos absolutos das imagens em diferentes resoluções.
+* **[TmdbService (tmdb_service.rb)](file:///home/b3rnard0p/ProjetosWSL/Synapse/Backend/app/services/tmdb_service.rb):** Implementa um wrapper otimizado de API com o TMDB. Busca simultaneamente os detalhes do filme, provedores de streaming no Brasil (*Watch Providers*), trailers do YouTube, ficha técnica com elenco e uma lista de filmes semelhantes usando uma única chamada de rede consolidada, maximizando a performance da aplicação.
 * **[QrCodeService (qr_code_service.rb)](file:///home/b3rnard0p/ProjetosWSL/Synapse/Backend/app/services/qr_code_service.rb):** Cria o payload JSON representativo do ingresso (ID, cinema, filme, data e desconto) e gera uma imagem SVG encriptada em string **Base64**, garantindo portabilidade extrema e leveza no transporte dos dados para o aplicativo do usuário.
 
 ---
@@ -249,7 +249,9 @@ src/app/
 │   ├── wallet.tsx           → Carteira: exibição de ingressos, leitor virtual e check-in
 │   └── profile.tsx          → Painel do usuário: progresso de pontuação e recompensas
 ├── movie/
-│   └── [id].tsx             → Detalhes técnicos, trailer, elenco e compra simulada
+│   └── [id].tsx             → Detalhes completos (provedores de streaming, elenco clicável, filmes semelhantes e trailer) e compra simulada
+├── person/
+│   └── [id].tsx             → Perfil do ator contendo biografia detalhada e grade extensa de filmografia
 └── _layout.tsx              → Ponto de entrada global: inicia Zustand, Tema e rotas
 ```
 
@@ -286,6 +288,8 @@ Para garantir o reuso de código e acelerar o desenvolvimento, a interface conta
 * **`AnimatedIcon`:** Micro-animações suaves para ícones das guias utilizando `react-native-reanimated`, criando respostas táteis e visuais ao toque do usuário.
 * **`ThemedText` / `ThemedView`:** Componentes wrapper que escutam o estado global da `Theme Store` e aplicam cores e contrastes apropriados automaticamente, simplificando a implementação de Dark Mode em todo o app.
 * **`TicketCard`:** Renderização premium de ingresso que imita o visual de um ticket físico de cinema, contendo picote lateral simulado com bordas recortadas, linha tracejada estilizada, pôster miniaturizado do filme e indicação de QR Code disponível.
+* **`Movie Details & Watch Providers`:** Integração inteligente na tela do filme informando em quais plataformas de streaming do Brasil a obra está disponível (Netflix, Max, etc).
+* **`Cast & Similar Movies Carousel`:** O elenco é totalmente interativo (toque na foto para abrir o Perfil do Ator com biografia e filmografia), e ao fim da página um carrossel de Títulos Semelhantes sugere o próximo filme.
 
 ---
 

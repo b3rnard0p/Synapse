@@ -31,6 +31,23 @@ module Api
         render json: data, status: :ok
       end
 
+      # GET /api/v1/movies/recommended
+      def recommended
+        page = params.fetch(:page, 1).to_i
+        genre_ids = current_user.genre_ids
+
+        if genre_ids.empty?
+          render json: { results: [], total_pages: 0, total_results: 0 }, status: :ok
+          return
+        end
+
+        data = Rails.cache.fetch("movies:recommended:user_#{current_user.id}:page:#{page}", expires_in: CACHE_EXPIRY) do
+          TmdbService.new.discover_by_genres(genre_ids, page:)
+        end
+
+        render json: data, status: :ok
+      end
+
       # GET /api/v1/movies/genres
       def genres
         genres = Rails.cache.fetch("movies:genres", expires_in: 1.day) do

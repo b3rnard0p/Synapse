@@ -1,6 +1,6 @@
 // API and environment configuration
 const DEV_API_URL = 'http://localhost:3000/api/v1';
-const PROD_API_URL = 'https://api.synapse.app/api/v1'; // Update before production
+const PROD_API_URL = 'https://synapseapp.duckdns.org/api/v1';
 
 export const Config = {
   API_URL: __DEV__ ? DEV_API_URL : PROD_API_URL,

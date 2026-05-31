@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Film, Star, Calendar, Ticket, Popcorn } from 'lucide-react-native';
+import { Film, Star, Calendar, Ticket, Popcorn, Sparkles } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMoviesStore } from '@/stores/movies.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -66,17 +66,18 @@ function SectionHeader({ title, icon, onSeeAll, c }: { title: string; icon: Reac
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { upcoming, nowPlaying, isLoading, fetchUpcoming, fetchNowPlaying } = useMoviesStore();
+  const { upcoming, nowPlaying, recommended, isLoading, fetchUpcoming, fetchNowPlaying, fetchRecommended } = useMoviesStore();
   const { theme } = useThemeStore();
   const c = Colors[theme];
 
   useEffect(() => {
     fetchUpcoming();
     fetchNowPlaying();
+    fetchRecommended();
   }, []);
 
   const onRefresh = useCallback(async () => {
-    await Promise.all([fetchUpcoming(1), fetchNowPlaying(1)]);
+    await Promise.all([fetchUpcoming(1), fetchNowPlaying(1), fetchRecommended(1)]);
   }, []);
 
   const handleMoviePress = (tmdbId: number) => {
@@ -156,6 +157,23 @@ export default function HomeScreen() {
               renderItem={renderUpcomingItem}
             />
 
+            {/* Recommended Section */}
+            {recommended.length > 0 && (
+              <>
+                <SectionHeader title="Recomendados para Você" icon={<Sparkles size={20} color={c.text} />} c={c} />
+                <FlatList
+                  data={recommended.slice(0, 10)}
+                  keyExtractor={(item) => `recommended-${item.tmdb_id}`}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recommendedList}
+                  renderItem={({ item }) => (
+                    <MovieCard movie={item} onPress={() => handleMoviePress(item.tmdb_id)} />
+                  )}
+                />
+              </>
+            )}
+
             {/* Now Playing Section */}
             <SectionHeader
               title="Em Cartaz"
@@ -206,6 +224,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '800' },
   seeAll: { fontSize: 14, color: '#be123c', fontWeight: '600' },
   upcomingList: { paddingHorizontal: 20, paddingBottom: 8, gap: 12 },
+  recommendedList: { paddingHorizontal: 20, paddingBottom: 8, gap: 12 },
   upcomingCard: {
     width: width * 0.72,
     height: 220,

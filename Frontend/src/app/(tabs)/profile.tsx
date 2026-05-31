@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   Image,
   Alert,
   Platform,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Star, Film, Gift, Receipt, Popcorn, CupSoda, Ticket, Moon, Sun } from 'lucide-react-native';
+import { Star, Film, Gift, Receipt, Popcorn, CupSoda, Ticket, Moon, Sun, Edit2, X, Check } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/auth.store';
+import { moviesService } from '@/services/api/movies.service';
 import { useTicketsStore } from '@/stores/tickets.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { Colors } from '@/constants/theme';
@@ -56,10 +58,14 @@ function RewardCard({ reward, c }: { reward: Reward; c: any }) {
 }
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateUserGenres } = useAuthStore();
   const { pointsBalance, rewards, pointsHistory, fetchPoints, fetchRewards } = useTicketsStore();
   const { theme, toggleTheme } = useThemeStore();
   const c = Colors[theme];
+  
+  const [isGenreModalVisible, setIsGenreModalVisible] = useState(false);
+  const [allGenres, setAllGenres] = useState<any[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<any[]>([]);
 
   useEffect(() => {
     fetchPoints();
@@ -72,6 +78,32 @@ export default function ProfileScreen() {
     : 100;
 
   const router = useRouter();
+
+  const handleOpenGenreModal = async () => {
+    setSelectedGenres(user?.genre_preferences || []);
+    setIsGenreModalVisible(true);
+    if (allGenres.length === 0) {
+      try {
+        const genres = await moviesService.getGenres();
+        setAllGenres(genres);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleSaveGenres = async () => {
+    await updateUserGenres(selectedGenres);
+    setIsGenreModalVisible(false);
+  };
+
+  const toggleGenre = (genre: any) => {
+    if (selectedGenres.find((g) => g.id === genre.id)) {
+      setSelectedGenres(selectedGenres.filter((g) => g.id !== genre.id));
+    } else {
+      setSelectedGenres([...selectedGenres, { id: genre.id, name: genre.name }]);
+    }
+  };
 
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
@@ -150,9 +182,14 @@ export default function ProfileScreen() {
 
         {/* Genre Preferences */}
         <View style={styles.section}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <Film size={20} color={c.text} />
-            <Text style={[styles.sectionTitle, { color: c.text }]}>Seus Gêneros</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Film size={20} color={c.text} />
+              <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Seus Gêneros</Text>
+            </View>
+            <TouchableOpacity onPress={handleOpenGenreModal} style={{ padding: 4 }}>
+              <Edit2 size={16} color={c.primary} />
+            </TouchableOpacity>
           </View>
           <View style={styles.genreContainer}>
             {user?.genre_preferences?.map((g) => (
@@ -170,7 +207,7 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <Gift size={20} color={c.text} />
-            <Text style={[styles.sectionTitle, { color: c.text }]}>Recompensas</Text>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>Trocar pontos por Descontos</Text>
           </View>
           {rewards.map((reward) => (
             <RewardCard key={reward.id} reward={reward} c={c} />
@@ -198,6 +235,51 @@ export default function ProfileScreen() {
           <Text style={[styles.logoutText, { color: c.error }]}>Sair da conta</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Genre Selection Modal */}
+      <Modal visible={isGenreModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <LinearGradient colors={[c.backgroundSecondary, c.background]} style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: c.text }]}>Selecione seus Gêneros</Text>
+              <TouchableOpacity onPress={() => setIsGenreModalVisible(false)}>
+                <X size={24} color={c.icon} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+              <View style={styles.genreGrid}>
+                {allGenres.map((genre) => {
+                  const isSelected = !!selectedGenres.find((g) => g.id === genre.id);
+                  return (
+                    <TouchableOpacity
+                      key={genre.id}
+                      style={[
+                        styles.genreSelectChip,
+                        { borderColor: isSelected ? c.primary : c.border },
+                        isSelected && { backgroundColor: c.primary + '22' }
+                      ]}
+                      onPress={() => toggleGenre(genre)}
+                    >
+                      <Text style={[styles.genreSelectText, { color: isSelected ? c.primary : c.textSecondary }]}>
+                        {genre.name}
+                      </Text>
+                      {isSelected && <Check size={14} color={c.primary} style={{ marginLeft: 6 }} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.saveBtn, { backgroundColor: c.primary }]}
+              onPress={handleSaveGenres}
+            >
+              <Text style={styles.saveBtnText}>Salvar Preferências</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -240,4 +322,15 @@ const styles = StyleSheet.create({
   historyPoints: { fontSize: 14, fontWeight: '700' },
   logoutBtn: { marginHorizontal: 20, marginTop: 32, paddingVertical: 16, alignItems: 'center', borderRadius: 16, borderWidth: 1 },
   logoutText: { fontWeight: '700', fontSize: 15 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
+  modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 48, maxHeight: '80%', borderWidth: 1, borderColor: 'rgba(190,18,60,0.2)' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 20, fontWeight: '800' },
+  modalScroll: { marginBottom: 20 },
+  modalScrollContent: { paddingBottom: 20 },
+  genreGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  genreSelectChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, borderWidth: 1 },
+  genreSelectText: { fontSize: 14, fontWeight: '600' },
+  saveBtn: { paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
+  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });

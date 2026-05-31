@@ -36,4 +36,11 @@ export const authService = {
   updatePushToken: async (userId: number, pushToken: string): Promise<void> => {
     await apiClient.patch(`/users/${userId}`, { user: { push_token: pushToken } });
   },
+
+  /**
+   * Update user preferences (including genres)
+   */
+  updatePreferences: async (userId: number, preferences: any): Promise<void> => {
+    await apiClient.put(`/users/${userId}/preferences`, { preferences });
+  },
 };

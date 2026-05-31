@@ -5,6 +5,7 @@ import { moviesService } from '@/services/api/movies.service';
 interface MoviesState {
   upcoming: Movie[];
   nowPlaying: Movie[];
+  recommended: Movie[];
   favorites: Movie[];
   currentMovie: MovieDetail | null;
   searchResults: Movie[];
@@ -13,12 +14,15 @@ interface MoviesState {
   error: string | null;
   upcomingPage: number;
   nowPlayingPage: number;
+  recommendedPage: number;
   hasMoreUpcoming: boolean;
   hasMoreNowPlaying: boolean;
+  hasMoreRecommended: boolean;
 
   // Actions
   fetchUpcoming: (page?: number) => Promise<void>;
   fetchNowPlaying: (page?: number) => Promise<void>;
+  fetchRecommended: (page?: number) => Promise<void>;
   fetchMovieDetails: (tmdbId: number) => Promise<void>;
   searchMovies: (query: string) => Promise<void>;
   clearSearch: () => void;
@@ -30,6 +34,7 @@ interface MoviesState {
 export const useMoviesStore = create<MoviesState>((set, get) => ({
   upcoming: [],
   nowPlaying: [],
+  recommended: [],
   favorites: [],
   currentMovie: null,
   searchResults: [],
@@ -38,8 +43,10 @@ export const useMoviesStore = create<MoviesState>((set, get) => ({
   error: null,
   upcomingPage: 1,
   nowPlayingPage: 1,
+  recommendedPage: 1,
   hasMoreUpcoming: true,
   hasMoreNowPlaying: true,
+  hasMoreRecommended: true,
 
   fetchUpcoming: async (page = 1) => {
     set({ isLoading: true, error: null });
@@ -68,6 +75,22 @@ export const useMoviesStore = create<MoviesState>((set, get) => ({
       }));
     } catch {
       set({ error: 'Erro ao carregar filmes em cartaz' });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchRecommended: async (page = 1) => {
+    set({ isLoading: true, error: null });
+    try {
+      const data = await moviesService.getRecommended(page);
+      set((state) => ({
+        recommended: page === 1 ? data.results : [...state.recommended, ...data.results],
+        recommendedPage: page,
+        hasMoreRecommended: page < data.total_pages,
+      }));
+    } catch {
+      set({ error: 'Erro ao carregar filmes recomendados' });
     } finally {
       set({ isLoading: false });
     }

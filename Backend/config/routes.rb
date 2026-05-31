@@ -9,17 +9,21 @@ Rails.application.routes.draw do
       get    "auth/me",      to: "auth#me"
 
       # Movies (TMDB proxy)
+      get "movies/recommended", to: "movies#recommended"
       get "movies/upcoming",    to: "movies#upcoming"
       get "movies/now_playing", to: "movies#now_playing"
       get "movies/search",      to: "movies#search"
       get "movies/genres",      to: "movies#genres"
       get "movies/:id",         to: "movies#show"
 
+      # People (Cast/Crew)
+      resources :people, only: [ :show ]
+
       # Users
       resources :users, only: [ :show, :update ] do
         member do
           get  :preferences
-          put  :preferences
+          put  :preferences, action: :update_preferences
         end
         resources :favorites,      only: [ :index, :create, :destroy ]
         resources :notifications,  only: [ :index, :update ]

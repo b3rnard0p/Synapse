@@ -29,24 +29,28 @@ module Api
       # PUT /api/v1/users/:id/preferences
       def update_preferences
         ActiveRecord::Base.transaction do
-          # Update general preferences JSON
-          @user.update!(preferences: preferences_params[:preferences] || @user.preferences)
+          prefs = params.require(:preferences).permit!
 
-          # Update genre preferences
-          if preferences_params[:genre_ids].present?
+          # Update general preferences JSON if provided
+          if prefs.key?(:preferences) || prefs.key?("preferences")
+            @user.update!(preferences: prefs[:preferences] || prefs["preferences"])
+          end
+
+          # Update genre preferences if the key is present (even if empty)
+          if !prefs[:genre_ids].nil? || !prefs["genre_ids"].nil? || !prefs[:genres].nil? || !prefs["genres"].nil?
             @user.genre_preferences.destroy_all
-            genres_data = preferences_params[:genres] || []
+            genres_data = prefs[:genres] || prefs["genres"] || []
             genres_data.each do |genre|
               @user.genre_preferences.create!(
-                genre_id: genre[:id],
-                genre_name: genre[:name]
+                genre_id: genre[:id] || genre["id"],
+                genre_name: genre[:name] || genre["name"]
               )
             end
           end
         end
 
         render json: { message: "Preferências atualizadas com sucesso" }, status: :ok
-      rescue ActiveRecord::RecordInvalid => e
+      rescue StandardError => e
         render_unprocessable([ e.message ])
       end
 

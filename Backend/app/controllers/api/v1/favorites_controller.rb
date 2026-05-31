@@ -29,7 +29,10 @@ module Api
 
       # DELETE /api/v1/users/:user_id/favorites/:id
       def destroy
-        favorite = @user.user_favorites.find_by(movie_id: params[:id])
+        movie = Movie.find_by(tmdb_id: params[:id])
+        return render_not_found("Favorito") unless movie
+
+        favorite = @user.user_favorites.find_by(movie_id: movie.id)
         return render_not_found("Favorito") unless favorite
 
         favorite.destroy!

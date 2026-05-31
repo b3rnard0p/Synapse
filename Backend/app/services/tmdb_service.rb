@@ -31,7 +31,7 @@ class TmdbService
 
   # Movie details
   def movie_details(tmdb_id, language: "pt-BR")
-    params = default_params(language:).merge(append_to_response: "credits,videos")
+    params = default_params(language:).merge(append_to_response: "credits,videos,watch/providers,similar")
     response = get("/movie/#{tmdb_id}", query: params)
     return nil unless response.success?
 
@@ -44,6 +44,24 @@ class TmdbService
     return [] unless response.success?
 
     response.parsed_response.dig("genres") || []
+  end
+
+  # Discover movies by genres
+  def discover_by_genres(genre_ids, page: 1, language: "pt-BR")
+    return { results: [], total_pages: 0, total_results: 0 } if genre_ids.empty?
+
+    genres_str = genre_ids.join(",")
+    response = get("/discover/movie", query: default_params(page:, language:, with_genres: genres_str))
+    parse_movie_list(response)
+  end
+
+  # Person details (Actor/Crew)
+  def person_details(person_id, language: "pt-BR")
+    params = default_params(language:).merge(append_to_response: "movie_credits")
+    response = get("/person/#{person_id}", query: params)
+    return nil unless response.success?
+
+    parse_person_detail(response.parsed_response)
   end
 
   # Full poster URL
@@ -108,6 +126,22 @@ class TmdbService
   def parse_movie_detail(movie)
     credits = movie["credits"] || {}
     videos = (movie.dig("videos", "results") || [])
+    
+    # Watch Providers (prioritize BR, fallback to US)
+    providers_data = movie.dig("watch/providers", "results") || {}
+    country_providers = providers_data["BR"] || providers_data["US"] || {}
+    flatrate = country_providers["flatrate"] || []
+    
+    watch_providers = flatrate.map do |p|
+      {
+        provider_id: p["provider_id"],
+        provider_name: p["provider_name"],
+        logo_url: self.class.poster_url(p["logo_path"], size: "w92")
+      }
+    end
+
+    # Similar movies
+    similar_movies = (movie.dig("similar", "results") || []).map { |m| parse_movie_summary(m) }
 
     {
       tmdb_id: movie["id"],
@@ -122,7 +156,9 @@ class TmdbService
       cast: parse_cast(credits["cast"]),
       trailer_url: self.class.trailer_url(videos),
       tagline: movie["tagline"],
-      status: movie["status"]
+      status: movie["status"],
+      watch_providers: watch_providers,
+      similar: similar_movies
     }
   end
 
@@ -137,5 +173,24 @@ class TmdbService
         profile_url: self.class.poster_url(member["profile_path"])
       }
     end
+  end
+
+  def parse_person_detail(person)
+    movie_credits = (person.dig("movie_credits", "cast") || [])
+      .sort_by { |m| m["popularity"] || 0 }
+      .reverse
+      .map { |m| parse_movie_summary(m) }
+      .reject { |m| m[:poster_url].nil? } # Filter out movies without posters for cleaner UI
+
+    {
+      id: person["id"],
+      name: person["name"],
+      biography: person["biography"],
+      birthday: person["birthday"],
+      place_of_birth: person["place_of_birth"],
+      known_for_department: person["known_for_department"],
+      profile_url: self.class.poster_url(person["profile_path"], size: "h632"),
+      movies: movie_credits
+    }
   end
 end

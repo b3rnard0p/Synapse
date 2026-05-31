@@ -75,8 +75,8 @@ function TicketCard({ ticket, onPress, c }: { ticket: Ticket; onPress: () => voi
               R$ {ticket.discounted_price ? Number(ticket.discounted_price).toFixed(2).replace('.', ',') : '0,00'}
             </Text>
           </View>
-          <View style={[styles.statusBadge, { borderColor: getStatusColor(ticket.status) }]}>
-            <Text style={[styles.statusText, { color: getStatusColor(ticket.status) }]}>
+          <View style={[styles.statusBadge, { borderColor: statusColors[ticket.status] }]}>
+            <Text style={[styles.statusText, { color: statusColors[ticket.status] }]}>
               {statusLabels[ticket.status]}
             </Text>
           </View>

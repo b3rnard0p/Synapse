@@ -15,6 +15,7 @@ interface AuthState {
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
+  updateUserGenres: (genres: GenrePreference[]) => Promise<void>;
   clearError: () => void;
 }
 
@@ -80,6 +81,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user } = get();
     if (user) {
       set({ user: { ...user, ...updates } });
+    }
+  },
+
+  updateUserGenres: async (genres: GenrePreference[]) => {
+    const { user } = get();
+    if (!user) return;
+    
+    // Optimistic update
+    set({ user: { ...user, genre_preferences: genres } });
+    
+    try {
+      const genreIds = genres.map(g => g.id);
+      await authService.updatePreferences(user.id, { 
+        genre_ids: genreIds,
+        genres: genres
+      });
+    } catch (error) {
+      console.error('Failed to update genres:', error);
+      // We could revert the optimistic update here if we stored previous state
     }
   },
 

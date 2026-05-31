@@ -5,6 +5,12 @@ export interface Genre {
   name: string;
 }
 
+export interface WatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_url: string | null;
+}
+
 export interface CastMember {
   id: number;
   name: string;
@@ -32,6 +38,19 @@ export interface MovieDetail extends Movie {
   trailer_url: string | null;
   tagline: string | null;
   status: string;
+  watch_providers?: WatchProvider[];
+  similar?: Movie[];
+}
+
+export interface PersonDetail {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  place_of_birth: string | null;
+  known_for_department: string;
+  profile_url: string | null;
+  movies: Movie[];
 }
 
 export interface MovieListResponse {

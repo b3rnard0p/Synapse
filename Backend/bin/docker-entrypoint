@@ -1,5 +1,10 @@
 #!/bin/bash -e
 
+# If there is a .env file, load it (useful for quick testing without security concerns)
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+fi
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
