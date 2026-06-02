@@ -41,7 +41,10 @@ module Api
           return
         end
 
-        data = Rails.cache.fetch("movies:recommended:user_#{current_user.id}:page:#{page}", expires_in: CACHE_EXPIRY) do
+        # Cache by genre combination so it updates when user changes genres
+        # Also allows sharing cache between users with identical genre preferences
+        cache_key = "movies:recommended:genres_#{genre_ids.sort.join(',')}:page:#{page}"
+        data = Rails.cache.fetch(cache_key, expires_in: CACHE_EXPIRY) do
           TmdbService.new.discover_by_genres(genre_ids, page:)
         end
 

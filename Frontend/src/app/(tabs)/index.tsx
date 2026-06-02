@@ -9,7 +9,7 @@ import {
   Dimensions,
   Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Film, Star, Calendar, Ticket, Popcorn, Sparkles } from 'lucide-react-native';
@@ -70,11 +70,13 @@ export default function HomeScreen() {
   const { theme } = useThemeStore();
   const c = Colors[theme];
 
-  useEffect(() => {
-    fetchUpcoming();
-    fetchNowPlaying();
-    fetchRecommended();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchUpcoming();
+      fetchNowPlaying();
+      fetchRecommended();
+    }, [])
+  );
 
   const onRefresh = useCallback(async () => {
     await Promise.all([fetchUpcoming(1), fetchNowPlaying(1), fetchRecommended(1)]);
@@ -147,15 +149,19 @@ export default function HomeScreen() {
             </LinearGradient>
 
             {/* Upcoming Section */}
-            <SectionHeader title="Próximas Estreias" icon={<Film size={20} color={c.text} />} c={c} />
-            <FlatList
-              data={upcoming.slice(0, 5)}
+            {upcoming.filter(m => new Date(m.release_date) > new Date()).length > 0 && (
+              <>
+                <SectionHeader title="Próximas Estreias" icon={<Film size={20} color={c.text} />} c={c} />
+                <FlatList
+                  data={upcoming.filter(m => new Date(m.release_date) > new Date()).slice(0, 5)}
               keyExtractor={(item) => `upcoming-${item.tmdb_id}`}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.upcomingList}
               renderItem={renderUpcomingItem}
-            />
+                />
+              </>
+            )}
 
             {/* Recommended Section */}
             {recommended.length > 0 && (

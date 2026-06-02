@@ -39,7 +39,7 @@ function TicketCard({ ticket, onPress, c }: { ticket: Ticket; onPress: () => voi
 
   return (
     <TouchableOpacity style={styles.ticketCard} onPress={onPress} activeOpacity={0.85}>
-      <LinearGradient colors={['#27272a', '#3f3f46']} style={styles.ticketGradient}>
+      <LinearGradient colors={[c.backgroundSecondary, c.background]} style={styles.ticketGradient}>
         {/* Movie Info */}
         <View style={styles.ticketHeader}>
           {ticket.movie.poster_url && (

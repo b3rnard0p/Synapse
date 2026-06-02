@@ -138,6 +138,10 @@ export default function MovieDetailScreen() {
   };
 
   const isUpcoming = currentMovie && new Date(currentMovie.release_date) > new Date();
+  const twoMonthsAgo = new Date();
+  twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+  const isNowPlaying = currentMovie && new Date(currentMovie.release_date) <= new Date() && new Date(currentMovie.release_date) >= twoMonthsAgo;
+  const canBuyTicket = isUpcoming || isNowPlaying;
 
   if (isLoading || !currentMovie) {
     return (
@@ -289,7 +293,8 @@ export default function MovieDetailScreen() {
       </ScrollView>
 
       {/* Buy Button */}
-      <View style={[styles.buyContainer, { backgroundColor: c.background, borderTopColor: c.border }]}>
+      {canBuyTicket && (
+        <View style={[styles.buyContainer, { backgroundColor: c.background, borderTopColor: c.border }]}>
         <View style={styles.priceInfo}>
           <Text style={[styles.originalPrice, { color: c.textSecondary }]}>R$ 35,00</Text>
           <Text style={[styles.discountedPrice, { color: c.text }]}>R$ 28,00</Text>
@@ -303,11 +308,12 @@ export default function MovieDetailScreen() {
           activeOpacity={0.85}
         >
           <LinearGradient colors={['#be123c', '#9f1239']} style={styles.buyGradient}>
-            <Ticket size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
+            
             <Text style={styles.buyText}>Comprar Ingresso</Text>
           </LinearGradient>
         </TouchableOpacity>
-      </View>
+        </View>
+      )}
 
       {/* Purchase Confirmation Modal */}
       <Modal visible={showBuyModal} transparent animationType="slide">
@@ -437,8 +443,8 @@ const styles = StyleSheet.create({
   discountBadge: { backgroundColor: '#4CAF50', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   discountText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
   buyButton: { flex: 1, borderRadius: 14, overflow: 'hidden' },
-  buyGradient: { paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
-  buyText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+  buyGradient: { width: '100%', paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  buyText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15, textAlign: 'center', flexShrink: 1 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
   modalContent: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 28, paddingBottom: 48, borderWidth: 1, borderColor: 'rgba(190,18,60,0.2)' },
   modalTitle: { fontSize: 22, fontWeight: '900', color: '#FFFFFF', marginBottom: 4 },
